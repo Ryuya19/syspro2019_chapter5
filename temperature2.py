@@ -2,6 +2,10 @@
 
 from smbus2 import SMBus
 import time
+import datetime
+import json
+from collections import OrderedDict
+
 
 bus_number  = 1
 i2c_address = 0x76
@@ -66,6 +70,7 @@ def readData():
 	temp_raw = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
 	hum_raw  = (data[6] << 8)  |  data[7]
 	
+        lib["time"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 	compensate_T(temp_raw)
 	compensate_P(pres_raw)
 	compensate_H(hum_raw)
@@ -73,7 +78,7 @@ def readData():
 def compensate_P(adc_P):
 	global  t_fine
 	pressure = 0.0
-	
+
 	v1 = (t_fine / 2.0) - 64000.0
 	v2 = (((v1 / 4.0) * (v1 / 4.0)) / 2048) * digP[5]
 	v2 = v2 + ((v1 * digP[4]) * 2.0)
@@ -93,6 +98,7 @@ def compensate_P(adc_P):
 	pressure = pressure + ((v1 + v2 + digP[6]) / 16.0)  
 
 	print "pressure : %7.2f hPa" % (pressure/100)
+        lib["pres"] = pressure / 100
 
 def compensate_T(adc_T):
 	global t_fine
@@ -101,6 +107,7 @@ def compensate_T(adc_T):
 	t_fine = v1 + v2
 	temperature = t_fine / 5120.0
 	print "temp : %-6.2f ℃" % (temperature) 
+        lib["temp"] = temperature
 
 def compensate_H(adc_H):
 	global t_fine
@@ -115,7 +122,7 @@ def compensate_H(adc_H):
 	elif var_h < 0.0:
 		var_h = 0.0
 	print "hum : %6.2f ％" % (var_h)
-
+        lib["hum"] = var_h
 
 def setup():
 	osrs_t = 1			#Temperature oversampling x 1
@@ -137,12 +144,16 @@ def setup():
 
 setup()
 get_calib_param()
-
+lib = OrderedDict()
+out = OrderedDict()
 
 if __name__ == '__main__':
-	try:
-            while(1):
-                readData()
-                time.sleep(10)
-	except KeyboardInterrupt:
+    
+	try: 
+            for i in range(0, 2):
+	        readData()
+                out[("id" + str(i))] = lib
+                time.sleep(2)
+            json.dump(out, open('temp.json', 'w'), indent = 4)
+        except KeyboardInterrupt:
 		pass
