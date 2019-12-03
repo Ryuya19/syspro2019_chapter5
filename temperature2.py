@@ -2,6 +2,9 @@
 
 from smbus2 import SMBus
 import time
+import json
+import datetime
+from collections import OrderedDict
 
 bus_number  = 1
 i2c_address = 0x76
@@ -14,6 +17,7 @@ digH = []
 
 t_fine = 0.0
 
+data = OrderedDict()
 
 def writeReg(reg_address, data):
 	bus.write_byte_data(i2c_address,reg_address,data)
@@ -92,7 +96,9 @@ def compensate_P(adc_P):
 	v2 = ((pressure / 4.0) * digP[7]) / 8192.0
 	pressure = pressure + ((v1 + v2 + digP[6]) / 16.0)  
 
-	print "pressure : %7.2f hPa" % (pressure/100)
+        pressure /= 100
+	print "pressure : %7.2f hPa" % (pressure)
+        return pressure
 
 def compensate_T(adc_T):
 	global t_fine
@@ -101,6 +107,7 @@ def compensate_T(adc_T):
 	t_fine = v1 + v2
 	temperature = t_fine / 5120.0
 	print "temp : %-6.2f ℃" % (temperature) 
+        return temperature
 
 def compensate_H(adc_H):
 	global t_fine
@@ -115,6 +122,7 @@ def compensate_H(adc_H):
 	elif var_h < 0.0:
 		var_h = 0.0
 	print "hum : %6.2f ％" % (var_h)
+        return var_h
 
 
 def setup():
@@ -140,14 +148,18 @@ get_calib_param()
 
 
 if __name__ == '__main__':
-	try:
-		readData()
+    for i in range (5):
+        try:
+                time = datetime.datetime.now()
+                data["id" + str(i)] = {\
+                        "time" : str(time),\
+                        "temp" : compensate_P(),\
+                        "pres" : compensate_T(),\
+                        "hum" : compensate_H()\
+                        }
 	except KeyboardInterrupt:
 		pass
-        for i in range(10):
-		print(i)
-		try:
-			readData()
-		except KeyboardInterrupt:
-			pass
-		time.sleep(10)
+        time.sleep(1)
+    json.dump(date,jsonfile)
+
+
