@@ -1,10 +1,9 @@
 #coding: utf-8
 
-from smbus2 import SMBus
-import time
 import json
 import datetime
 from collections import OrderedDict
+
 
 bus_number  = 1
 i2c_address = 0x76
@@ -17,7 +16,6 @@ digH = []
 
 t_fine = 0.0
 
-data = OrderedDict()
 
 def writeReg(reg_address, data):
 	bus.write_byte_data(i2c_address,reg_address,data)
@@ -148,6 +146,7 @@ get_calib_param()
 
 
 if __name__ == '__main__':
+    data = OrderedDict()
     for i in range (5):
         try:
                 time = datetime.datetime.now()
@@ -157,9 +156,9 @@ if __name__ == '__main__':
                         "pres" : compensate_T(),\
                         "hum" : compensate_H()\
                         }
+
 	except KeyboardInterrupt:
 		pass
         time.sleep(1)
+    jsonfile = open("data.txt","w")
     json.dump(date,jsonfile)
-
-
