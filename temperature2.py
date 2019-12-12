@@ -153,7 +153,7 @@ if __name__ == '__main__':
             for i in range(0, 2):
 	        readData()
                 out[("id" + str(i))] = lib
-                time.sleep(2)
+                time.sleep(10)
             json.dump(out, open('temp.json', 'w'), indent = 4)
         except KeyboardInterrupt:
 		pass
